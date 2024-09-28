@@ -1,25 +1,4 @@
-# utils.py -- Test utilities for Dulwich.
-# Copyright (C) 2010 Google, Inc.
-#
-# Dulwich is dual-licensed under the Apache License, Version 2.0 and the GNU
-# General Public License as public by the Free Software Foundation; version 2.0
-# or (at your option) any later version. You can redistribute it and/or
-# modify it under the terms of either of these two licenses.
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-# You should have received a copy of the licenses; if not, see
-# <http://www.gnu.org/licenses/> for a copy of the GNU General Public License
-# and <http://www.apache.org/licenses/LICENSE-2.0> for a copy of the Apache
-# License, Version 2.0.
-#
-
 """Utility functions common to Dulwich tests."""
-
 import datetime
 import os
 import shutil
@@ -28,24 +7,11 @@ import time
 import types
 import warnings
 from unittest import SkipTest
-
 from dulwich.index import commit_tree
 from dulwich.objects import Commit, FixedSha, Tag, object_class
-from dulwich.pack import (
-    DELTA_TYPES,
-    OFS_DELTA,
-    REF_DELTA,
-    SHA1Writer,
-    create_delta,
-    obj_sha,
-    write_pack_header,
-    write_pack_object,
-)
+from dulwich.pack import DELTA_TYPES, OFS_DELTA, REF_DELTA, SHA1Writer, create_delta, obj_sha, write_pack_header, write_pack_object
 from dulwich.repo import Repo
-
-# Plain files are very frequently used in tests, so let the mode be very short.
-F = 0o100644  # Shorthand mode for Files.
-
+F = 33188
 
 def open_repo(name, temp_dir=None):
     """Open a copy of a repo in a temporary directory.
@@ -61,22 +27,11 @@ def open_repo(name, temp_dir=None):
         temporary directory will be created.
     Returns: An initialized Repo object that lives in a temporary directory.
     """
-    if temp_dir is None:
-        temp_dir = tempfile.mkdtemp()
-    repo_dir = os.path.join(
-        os.path.dirname(__file__), "..", "..", "testdata", "repos", name
-    )
-    temp_repo_dir = os.path.join(temp_dir, name)
-    shutil.copytree(repo_dir, temp_repo_dir, symlinks=True)
-    return Repo(temp_repo_dir)
-
+    pass
 
 def tear_down_repo(repo):
     """Tear down a test repository."""
-    repo.close()
-    temp_dir = os.path.dirname(repo.path.rstrip(os.sep))
-    shutil.rmtree(temp_dir)
-
+    pass
 
 def make_object(cls, **attrs):
     """Make an object for testing and assign some members.
@@ -89,27 +44,7 @@ def make_object(cls, **attrs):
       attrs: dict of attributes to set on the new object.
     Returns: A newly initialized object of type cls.
     """
-
-    class TestObject(cls):
-        """Class that inherits from the given class, but without __slots__.
-
-        Note that classes with __slots__ can't have arbitrary attributes
-        monkey-patched in, so this is a class that is exactly the same only
-        with a __dict__ instead of __slots__.
-        """
-
-    TestObject.__name__ = "TestObject_" + cls.__name__
-
-    obj = TestObject()
-    for name, value in attrs.items():
-        if name == "id":
-            # id property is read-only, so we overwrite sha instead.
-            sha = FixedSha(value)
-            obj.sha = lambda: sha
-        else:
-            setattr(obj, name, value)
-    return obj
-
+    pass
 
 def make_commit(**attrs):
     """Make a Commit object with a default set of members.
@@ -118,21 +53,7 @@ def make_commit(**attrs):
       attrs: dict of attributes to overwrite from the default values.
     Returns: A newly initialized Commit object.
     """
-    default_time = 1262304000  # 2010-01-01 00:00:00
-    all_attrs = {
-        "author": b"Test Author <test@nodomain.com>",
-        "author_time": default_time,
-        "author_timezone": 0,
-        "committer": b"Test Committer <test@nodomain.com>",
-        "commit_time": default_time,
-        "commit_timezone": 0,
-        "message": b"Test message.",
-        "parents": [],
-        "tree": b"0" * 40,
-    }
-    all_attrs.update(attrs)
-    return make_object(Commit, **all_attrs)
-
+    pass
 
 def make_tag(target, **attrs):
     """Make a Tag object with a default set of values.
@@ -142,29 +63,11 @@ def make_tag(target, **attrs):
       attrs: dict of attributes to overwrite from the default values.
     Returns: A newly initialized Tag object.
     """
-    target_id = target.id
-    target_type = object_class(target.type_name)
-    default_time = int(time.mktime(datetime.datetime(2010, 1, 1).timetuple()))
-    all_attrs = {
-        "tagger": b"Test Author <test@nodomain.com>",
-        "tag_time": default_time,
-        "tag_timezone": 0,
-        "message": b"Test message.",
-        "object": (target_type, target_id),
-        "name": b"Test Tag",
-    }
-    all_attrs.update(attrs)
-    return make_object(Tag, **all_attrs)
-
+    pass
 
 def functest_builder(method, func):
     """Generate a test method that tests the given function."""
-
-    def do_test(self):
-        method(self, func)
-
-    return do_test
-
+    pass
 
 def ext_functest_builder(method, func):
     """Generate a test method that tests the given extension function.
@@ -187,14 +90,7 @@ def ext_functest_builder(method, func):
         function implementation to test.
       func: The function implementation to pass to method.
     """
-
-    def do_test(self):
-        if not isinstance(func, types.BuiltinFunctionType):
-            raise SkipTest(f"{func} extension not found")
-        method(self, func)
-
-    return do_test
-
+    pass
 
 def build_pack(f, objects_spec, store=None):
     """Write test pack data from a concise spec.
@@ -215,62 +111,7 @@ def build_pack(f, objects_spec, store=None):
     Returns: A list of tuples in the order specified by objects_spec:
         (offset, type num, data, sha, CRC32)
     """
-    sf = SHA1Writer(f)
-    num_objects = len(objects_spec)
-    write_pack_header(sf.write, num_objects)
-
-    full_objects = {}
-    offsets = {}
-    crc32s = {}
-
-    while len(full_objects) < num_objects:
-        for i, (type_num, data) in enumerate(objects_spec):
-            if type_num not in DELTA_TYPES:
-                full_objects[i] = (type_num, data, obj_sha(type_num, [data]))
-                continue
-            base, data = data
-            if isinstance(base, int):
-                if base not in full_objects:
-                    continue
-                base_type_num, _, _ = full_objects[base]
-            else:
-                base_type_num, _ = store.get_raw(base)
-            full_objects[i] = (
-                base_type_num,
-                data,
-                obj_sha(base_type_num, [data]),
-            )
-
-    for i, (type_num, obj) in enumerate(objects_spec):
-        offset = f.tell()
-        if type_num == OFS_DELTA:
-            base_index, data = obj
-            base = offset - offsets[base_index]
-            _, base_data, _ = full_objects[base_index]
-            obj = (base, list(create_delta(base_data, data)))
-        elif type_num == REF_DELTA:
-            base_ref, data = obj
-            if isinstance(base_ref, int):
-                _, base_data, base = full_objects[base_ref]
-            else:
-                base_type_num, base_data = store.get_raw(base_ref)
-                base = obj_sha(base_type_num, base_data)
-            obj = (base, list(create_delta(base_data, data)))
-
-        crc32 = write_pack_object(sf.write, type_num, obj)
-        offsets[i] = offset
-        crc32s[i] = crc32
-
-    expected = []
-    for i in range(num_objects):
-        type_num, data, sha = full_objects[i]
-        assert len(sha) == 20
-        expected.append((offsets[i], type_num, data, sha, crc32s[i]))
-
-    sf.write_sha()
-    f.seek(0)
-    return expected
-
+    pass
 
 def build_commit_graph(object_store, commit_spec, trees=None, attrs=None):
     """Build a commit graph from a concise specification.
@@ -304,62 +145,8 @@ def build_commit_graph(object_store, commit_spec, trees=None, attrs=None):
     Raises:
       ValueError: If an undefined commit identifier is listed as a parent.
     """
-    if trees is None:
-        trees = {}
-    if attrs is None:
-        attrs = {}
-    commit_time = 0
-    nums = {}
-    commits = []
-
-    for commit in commit_spec:
-        commit_num = commit[0]
-        try:
-            parent_ids = [nums[pn] for pn in commit[1:]]
-        except KeyError as exc:
-            (missing_parent,) = exc.args
-            raise ValueError("Unknown parent %i" % missing_parent) from exc
-
-        blobs = []
-        for entry in trees.get(commit_num, []):
-            if len(entry) == 2:
-                path, blob = entry
-                entry = (path, blob, F)
-            path, blob, mode = entry
-            blobs.append((path, blob.id, mode))
-            object_store.add_object(blob)
-        tree_id = commit_tree(object_store, blobs)
-
-        commit_attrs = {
-            "message": ("Commit %i" % commit_num).encode("ascii"),
-            "parents": parent_ids,
-            "tree": tree_id,
-            "commit_time": commit_time,
-        }
-        commit_attrs.update(attrs.get(commit_num, {}))
-        commit_obj = make_commit(**commit_attrs)
-
-        # By default, increment the time by a lot. Out-of-order commits should
-        # be closer together than this because their main cause is clock skew.
-        commit_time = commit_attrs["commit_time"] + 100
-        nums[commit_num] = commit_obj.id
-        object_store.add_object(commit_obj)
-        commits.append(commit_obj)
-
-    return commits
-
+    pass
 
 def setup_warning_catcher():
     """Wrap warnings.showwarning with code that records warnings."""
-    caught_warnings = []
-    original_showwarning = warnings.showwarning
-
-    def custom_showwarning(*args, **kwargs):
-        caught_warnings.append(args[0])
-
-    warnings.showwarning = custom_showwarning
-
-    def restore_showwarning():
-        warnings.showwarning = original_showwarning
-
-    return caught_warnings, restore_showwarning
+    pass

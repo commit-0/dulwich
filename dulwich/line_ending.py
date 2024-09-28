@@ -1,23 +1,4 @@
-# line_ending.py -- Line ending conversion functions
-# Copyright (C) 2018-2018 Boris Feld <boris.feld@comet.ml>
-#
-# Dulwich is dual-licensed under the Apache License, Version 2.0 and the GNU
-# General Public License as public by the Free Software Foundation; version 2.0
-# or (at your option) any later version. You can redistribute it and/or
-# modify it under the terms of either of these two licenses.
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-# You should have received a copy of the licenses; if not, see
-# <http://www.gnu.org/licenses/> for a copy of the GNU General Public License
-# and <http://www.apache.org/licenses/LICENSE-2.0> for a copy of the Apache
-# License, Version 2.0.
-#
-r"""All line-ending related functions, from conversions to config processing.
+"""All line-ending related functions, from conversions to config processing.
 
 Line-ending normalization is a complex beast. Here is some notes and details
 about how it seems to work.
@@ -61,23 +42,23 @@ There is multiple variables that impact the normalization.
 First, a repository can contains a ``.gitattributes`` file (or more than one...)
 that can further customize the operation on some file patterns, for example:
 
-    \*.txt text
+    \\*.txt text
 
 Force all ``.txt`` files to be treated as text files and to have their lines
 endings normalized.
 
-    \*.jpg -text
+    \\*.jpg -text
 
 Force all ``.jpg`` files to be treated as binary files and to not have their
 lines endings converted.
 
-    \*.vcproj text eol=crlf
+    \\*.vcproj text eol=crlf
 
 Force all ``.vcproj`` files to be treated as text files and to have their lines
 endings converted into ``CRLF`` in working directory no matter the native EOL of
 the platform.
 
-    \*.sh text eol=lf
+    \\*.sh text eol=lf
 
 Force all ``.sh`` files to be treated as text files and to have their lines
 endings converted into ``LF`` in working directory no matter the native EOL of
@@ -86,7 +67,7 @@ the platform.
 If the ``eol`` attribute is not defined, Git uses the ``core.eol`` configuration
 value described later.
 
-    \* text=auto
+    \\* text=auto
 
 Force all files to be scanned by the text file heuristic detection and to have
 their line endings normalized in case they are detected as text files.
@@ -135,14 +116,11 @@ Sources:
 - https://git-scm.com/docs/gitattributes#_checking_out_and_checking_in
 - https://adaptivepatchwork.com/2012/03/01/mind-the-end-of-your-line/
 """
-
 from .object_store import iter_tree_contents
 from .objects import Blob
 from .patch import is_binary
-
-CRLF = b"\r\n"
-LF = b"\n"
-
+CRLF = b'\r\n'
+LF = b'\n'
 
 def convert_crlf_to_lf(text_hunk):
     """Convert CRLF in text hunk into LF.
@@ -151,8 +129,7 @@ def convert_crlf_to_lf(text_hunk):
       text_hunk: A bytes string representing a text hunk
     Returns: The text hunk with the same type, with CRLF replaced into LF
     """
-    return text_hunk.replace(CRLF, LF)
-
+    pass
 
 def convert_lf_to_crlf(text_hunk):
     """Convert LF in text hunk into CRLF.
@@ -161,26 +138,15 @@ def convert_lf_to_crlf(text_hunk):
       text_hunk: A bytes string representing a text hunk
     Returns: The text hunk with the same type, with LF replaced into CRLF
     """
-    # TODO find a more efficient way of doing it
-    intermediary = text_hunk.replace(CRLF, LF)
-    return intermediary.replace(LF, CRLF)
-
+    pass
 
 def get_checkout_filter(core_eol, core_autocrlf, git_attributes):
     """Returns the correct checkout filter based on the passed arguments."""
-    # TODO this function should process the git_attributes for the path and if
-    # the text attribute is not defined, fallback on the
-    # get_checkout_filter_autocrlf function with the autocrlf value
-    return get_checkout_filter_autocrlf(core_autocrlf)
-
+    pass
 
 def get_checkin_filter(core_eol, core_autocrlf, git_attributes):
     """Returns the correct checkin filter based on the passed arguments."""
-    # TODO this function should process the git_attributes for the path and if
-    # the text attribute is not defined, fallback on the
-    # get_checkin_filter_autocrlf function with the autocrlf value
-    return get_checkin_filter_autocrlf(core_autocrlf)
-
+    pass
 
 def get_checkout_filter_autocrlf(core_autocrlf):
     """Returns the correct checkout filter base on autocrlf value.
@@ -191,11 +157,7 @@ def get_checkout_filter_autocrlf(core_autocrlf):
     Returns: Either None if no filter has to be applied or a function
         accepting a single argument, a binary text hunk
     """
-    if core_autocrlf == b"true":
-        return convert_lf_to_crlf
-
-    return None
-
+    pass
 
 def get_checkin_filter_autocrlf(core_autocrlf):
     """Returns the correct checkin filter base on autocrlf value.
@@ -206,12 +168,7 @@ def get_checkin_filter_autocrlf(core_autocrlf):
     Returns: Either None if no filter has to be applied or a function
         accepting a single argument, a binary text hunk
     """
-    if core_autocrlf == b"true" or core_autocrlf == b"input":
-        return convert_crlf_to_lf
-
-    # Checking filter should never be `convert_lf_to_crlf`
-    return None
-
+    pass
 
 class BlobNormalizer:
     """An object to store computation result of which filter to apply based
@@ -221,84 +178,37 @@ class BlobNormalizer:
     def __init__(self, config_stack, gitattributes) -> None:
         self.config_stack = config_stack
         self.gitattributes = gitattributes
-
-        # Compute which filters we needs based on parameters
         try:
-            core_eol = config_stack.get("core", "eol")
+            core_eol = config_stack.get('core', 'eol')
         except KeyError:
-            core_eol = "native"
-
+            core_eol = 'native'
         try:
-            core_autocrlf = config_stack.get("core", "autocrlf").lower()
+            core_autocrlf = config_stack.get('core', 'autocrlf').lower()
         except KeyError:
             core_autocrlf = False
-
-        self.fallback_read_filter = get_checkout_filter(
-            core_eol, core_autocrlf, self.gitattributes
-        )
-        self.fallback_write_filter = get_checkin_filter(
-            core_eol, core_autocrlf, self.gitattributes
-        )
+        self.fallback_read_filter = get_checkout_filter(core_eol, core_autocrlf, self.gitattributes)
+        self.fallback_write_filter = get_checkin_filter(core_eol, core_autocrlf, self.gitattributes)
 
     def checkin_normalize(self, blob, tree_path):
         """Normalize a blob during a checkin operation."""
-        if self.fallback_write_filter is not None:
-            return normalize_blob(
-                blob, self.fallback_write_filter, binary_detection=True
-            )
-
-        return blob
+        pass
 
     def checkout_normalize(self, blob, tree_path):
         """Normalize a blob during a checkout operation."""
-        if self.fallback_read_filter is not None:
-            return normalize_blob(
-                blob, self.fallback_read_filter, binary_detection=True
-            )
-
-        return blob
-
+        pass
 
 def normalize_blob(blob, conversion, binary_detection):
     """Takes a blob as input returns either the original blob if
     binary_detection is True and the blob content looks like binary, else
     return a new blob with converted data.
     """
-    # Read the original blob
-    data = blob.data
-
-    # If we need to detect if a file is binary and the file is detected as
-    # binary, do not apply the conversion function and return the original
-    # chunked text
-    if binary_detection is True:
-        if is_binary(data):
-            return blob
-
-    # Now apply the conversion
-    converted_data = conversion(data)
-
-    new_blob = Blob()
-    new_blob.data = converted_data
-
-    return new_blob
-
+    pass
 
 class TreeBlobNormalizer(BlobNormalizer):
+
     def __init__(self, config_stack, git_attributes, object_store, tree=None) -> None:
         super().__init__(config_stack, git_attributes)
         if tree:
-            self.existing_paths = {
-                name for name, _, _ in iter_tree_contents(object_store, tree)
-            }
+            self.existing_paths = {name for name, _, _ in iter_tree_contents(object_store, tree)}
         else:
             self.existing_paths = set()
-
-    def checkin_normalize(self, blob, tree_path):
-        # Existing files should only be normalized on checkin if it was
-        # previously normalized on checkout
-        if (
-            self.fallback_read_filter is not None
-            or tree_path not in self.existing_paths
-        ):
-            return super().checkin_normalize(blob, tree_path)
-        return blob
